@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: Cardiovascular Disease Prediction Using Machine Learning
+message: If you use this educational project, please cite the repository and the original UCI Heart Disease dataset.
+type: software
+authors:
+  - family-names: Abedin
+    given-names: Minhajul
+year: 2026
+license: MIT
+keywords:
+  - machine learning
+  - heart disease
+  - CRISP-DM
+  - explainable AI
+  - responsible AI
