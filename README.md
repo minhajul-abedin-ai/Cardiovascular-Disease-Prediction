@@ -6,6 +6,14 @@ This repository was rebuilt from my COM747 Data Science and Machine Learning cou
 
 > **Important:** This is an educational project. It is not a medical device and must not be used for diagnosis or clinical decision-making.
 
+## New here? Reproduce the educational baseline
+
+**Practitioners:** follow [Quick start](#quick-start) to run the improved leakage-aware pipeline. Compare newly generated outputs with the separately labelled [original coursework results](#reported-coursework-results); the original results are not claimed as fresh reproductions.
+
+**Researchers and students:** review [limitations](#limitations), [responsible-AI notes](#responsible-ai-note) and the [group project attribution](#academic-project-context). This research demonstration **must not be used for clinical decisions**.
+
+**Related work:** [AI engineering portfolio](https://github.com/minhajul-abedin-ai).
+
 ## What the project does
 
 The original coursework used a 1,025-row heart-disease dataset with 13 input features and one binary target. The workflow:
