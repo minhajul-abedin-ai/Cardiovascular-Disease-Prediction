@@ -78,7 +78,7 @@ def download_dataset(destination: str | Path) -> Path:
         except Exception as exc:  # noqa: BLE001 - report all mirror failures
             errors.append(f"{url}: {exc}")
 
-    raise RuntimeError("Could not download dataset.\\n" + "\\n".join(errors))
+    raise RuntimeError("Could not download dataset.\n" + "\n".join(errors))
 
 
 def load_raw_data(path: str | Path) -> pd.DataFrame:
