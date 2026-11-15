@@ -2,8 +2,9 @@ name: ML pipeline tests
 on:
   push:
     branches: [main]
+  # Run tests for PRs targeting main or another development branch.
+  # This supports stacked PRs without enabling push CI on every branch.
   pull_request:
-    branches: [main]
 permissions:
   contents: read
 jobs:
