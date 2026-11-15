@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
+import os
+import tempfile
 from pathlib import Path
 from typing import Iterable
 from urllib.request import urlopen
@@ -52,18 +55,30 @@ def download_dataset(destination: str | Path) -> Path:
         try:
             with urlopen(url, timeout=30) as response:
                 payload = response.read()
-            destination.write_bytes(payload)
-            df = pd.read_csv(destination)
+            # Validate in memory before touching an existing local dataset.
+            df = pd.read_csv(BytesIO(payload))
             validate_columns(df)
             if len(df) != 1025:
                 raise ValueError(f"Expected 1025 rows, downloaded {len(df)}")
+
+            # Replace atomically only after the complete payload passes validation.
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", dir=destination.parent, prefix=".heart-",
+                    suffix=".csv", delete=False
+                ) as temp:
+                    temp_path = Path(temp.name)
+                    temp.write(payload)
+                os.replace(temp_path, destination)
+            finally:
+                if temp_path is not None:
+                    temp_path.unlink(missing_ok=True)
             return destination
         except Exception as exc:  # noqa: BLE001 - report all mirror failures
             errors.append(f"{url}: {exc}")
-            if destination.exists():
-                destination.unlink()
 
-    raise RuntimeError("Could not download dataset.\n" + "\n".join(errors))
+    raise RuntimeError("Could not download dataset.\\n" + "\\n".join(errors))
 
 
 def load_raw_data(path: str | Path) -> pd.DataFrame:
