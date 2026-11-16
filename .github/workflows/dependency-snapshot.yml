@@ -31,12 +31,17 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q src tests scripts
       - name: Capture resolved package versions
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           mkdir -p dependency-snapshot
           python -m pip freeze --all > dependency-snapshot/python311-ubuntu2404-freeze.txt
           python --version > dependency-snapshot/python-version.txt 2>&1
           python -m pip --version > dependency-snapshot/pip-version.txt
           git rev-parse HEAD > dependency-snapshot/commit-sha.txt
+          printf '%s\n' "$PR_HEAD_SHA" > dependency-snapshot/pr-head-sha.txt
+          printf '%s\n' "$GITHUB_SHA" > dependency-snapshot/event-sha.txt
+          printf '%s\n' "$GITHUB_EVENT_NAME" > dependency-snapshot/event-name.txt
           uname -a > dependency-snapshot/runner.txt
       - name: Upload environment evidence
         uses: actions/upload-artifact@v4
