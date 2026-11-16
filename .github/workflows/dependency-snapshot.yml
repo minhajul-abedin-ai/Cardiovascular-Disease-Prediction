@@ -1,0 +1,39 @@
+name: Capture Python 3.11 dependency snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install declared dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check installed dependency compatibility
+        run: python -m pip check
+      - name: Run offline unit tests
+        run: python -m pytest -q
+      - name: Compile Python sources
+        run: python -m compileall -q src tests scripts
+      - name: Capture resolved package versions
+        run: |
+          mkdir -p dependency-snapshot
+          python -m pip freeze --all > dependency-snapshot/python311-ubuntu2404-freeze.txt
+          python --version > dependency-snapshot/python-version.txt 2>&1
+          python -m pip --version > dependency-snapshot/pip-version.txt
+          git rev-parse HEAD > dependency-snapshot/commit-sha.txt
+          uname -a > dependency-snapshot/runner.txt
+      - name: Upload environment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: python311-dependency-snapshot
+          path: dependency-snapshot/
+          retention-days: 14
