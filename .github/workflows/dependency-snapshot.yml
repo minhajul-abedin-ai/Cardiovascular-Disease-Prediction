@@ -2,10 +2,13 @@ name: Capture Python 3.11 dependency snapshot
 
 on:
   workflow_dispatch:
-  # Temporary branch-scoped push trigger to validate before approval/merge.
-  push:
-    branches:
-      - ci/capture-python311-dependency-snapshot-20261116
+  pull_request:
+    paths:
+      - '.github/workflows/dependency-snapshot.yml'
+      - 'requirements.txt'
+      - 'src/**'
+      - 'tests/**'
+      - 'scripts/**'
 
 permissions:
   contents: read
