@@ -10,7 +10,7 @@ Status: **proposed validation procedure, not a validated lockfile**. Tracking: [
 
 ## Snapshot preflight (before selecting constraints)
 
-From the repository root, download artifact `14232033331` from the linked run and save it as `dependency-snapshot.zip`. The following **offline, standard-library-only** check prints the archive members, verifies the expected freeze entry exists, and rejects duplicate or non-exact package specifications. It does not prove that the pinned environment installs successfully.
+From the repository root, download artifact `14232033331` from the linked run and save it as `dependency-snapshot.zip`. The following **offline, standard-library-only** check prints the archive members, verifies the expected freeze entry exists, and rejects duplicate or non-exact package specifications. It does not prove that the pinned environment installs successfully. The regular expression rejects whitespace within version tokens; review any rejected freeze lines rather than weakening validation.
 
 ```bash
 python - <<'PY'
@@ -33,7 +33,7 @@ for line in lines:
     line = line.strip()
     if not line or line.startswith("#"):
         continue
-    match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\\s;]+)", line)
+    match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)", line)
     if not match:
         raise SystemExit(f"Review non-exact freeze entry: {line}")
     name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
