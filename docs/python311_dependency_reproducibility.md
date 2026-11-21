@@ -4,7 +4,7 @@ Status: **proposed validation procedure, not a validated lockfile**. Tracking: [
 
 ## Evidence and provenance
 
-[PR #8](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/pull/8) produced a Python 3.11 dependency snapshot in [Actions run 43882630426](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/43882630426), artifact ID `14232033331` (scheduled to expire 2026-11-30). Its `python311-ubuntu2404-freeze.txt` records 120 installed distributions on Ubuntu 24.04, Python 3.11.18. The snapshot's PR head SHA is `59a758e6b384f9c6bc2402bc362912448842979e`; the PR event/checkout SHA is `d16dae486d31335d5ffdb4ef18081434b11ae7a0`. These must not be conflated.
+[PR #8](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/pull/8) produced a Python 3.11 dependency snapshot in [Actions run 43882630426](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/43882630426), artifact ID `14232033331` (scheduled to expire 2026-11-30). GitHub Actions artifact metadata currently reports ZIP digest `sha256:6b564ff2cea275c6f8c1a2c77268f936bee80cb0e8db30fd3b3c217e5f9a374e` (checked 2026-11-21). Its `python311-ubuntu2404-freeze.txt` records 120 installed distributions on Ubuntu 24.04, Python 3.11.18. The snapshot's PR head SHA is `59a758e6b384f9c6bc2402bc362912448842979e`; the PR event/checkout SHA is `d16dae486d31335d5ffdb4ef18081434b11ae7a0`. These must not be conflated.
 
 **Do not copy the snapshot into a production constraints file without validation.** A `pip freeze` snapshot may contain development tools, platform-specific packages, or packages not needed by the application. A constraints file limits versions but does not itself request installation.
 
@@ -20,7 +20,11 @@ import hashlib
 import re
 
 archive = Path("dependency-snapshot.zip")
-print("archive_sha256:", hashlib.sha256(archive.read_bytes()).hexdigest())
+expected_sha256 = "6b564ff2cea275c6f8c1a2c77268f936bee80cb0e8db30fd3b3c217e5f9a374e"  # GitHub Actions artifact metadata, checked 2026-11-21
+actual_sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
+print("archive_sha256:", actual_sha256)
+if actual_sha256 != expected_sha256:
+    raise SystemExit("Artifact ZIP SHA-256 differs from GitHub Actions metadata; stop and investigate")
 with ZipFile(archive) as z:
     names = z.namelist()
     print("members:", names)
@@ -44,7 +48,7 @@ print("unique_exact_pins:", len(seen))
 PY
 ```
 
-Review any rejected entries manually rather than silently deleting them. Check the recorded PR head and checkout/event SHAs separately before using the snapshot. The archive hash is evidence of the ZIP you inspected, **not** a trusted published checksum.
+Review any rejected entries manually rather than silently deleting them. Check the recorded PR head and checkout/event SHAs separately before using the snapshot. The expected ZIP hash is from GitHub Actions artifact metadata, not an independently signed or immutable release. Recheck artifact ID and digest against GitHub before use; this comparison detects mismatched downloads but does not independently authenticate GitHub.
 
 ## Candidate generation and clean validation
 
