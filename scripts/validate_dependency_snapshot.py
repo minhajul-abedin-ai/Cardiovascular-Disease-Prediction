@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
-PIN = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\\s;]+)")
+PIN = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)")
 NAME = re.compile(r"[-_.]+")
 
 
