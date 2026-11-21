@@ -8,6 +8,44 @@ Status: **proposed validation procedure, not a validated lockfile**. Tracking: [
 
 **Do not copy the snapshot into a production constraints file without validation.** A `pip freeze` snapshot may contain development tools, platform-specific packages, or packages not needed by the application. A constraints file limits versions but does not itself request installation.
 
+## Snapshot preflight (before selecting constraints)
+
+From the repository root, download artifact `14232033331` from the linked run and save it as `dependency-snapshot.zip`. The following **offline, standard-library-only** check prints the archive members, verifies the expected freeze entry exists, and rejects duplicate or non-exact package specifications. It does not prove that the pinned environment installs successfully.
+
+```bash
+python - <<'PY'
+from pathlib import Path
+from zipfile import ZipFile
+import hashlib
+import re
+
+archive = Path("dependency-snapshot.zip")
+print("archive_sha256:", hashlib.sha256(archive.read_bytes()).hexdigest())
+with ZipFile(archive) as z:
+    names = z.namelist()
+    print("members:", names)
+    target = "python311-ubuntu2404-freeze.txt"
+    if names.count(target) != 1:
+        raise SystemExit(f"Expected exactly one {target} entry")
+    lines = z.read(target).decode("utf-8").splitlines()
+seen = set()
+for line in lines:
+    line = line.strip()
+    if not line or line.startswith("#"):
+        continue
+    match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\\s;]+)", line)
+    if not match:
+        raise SystemExit(f"Review non-exact freeze entry: {line}")
+    name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
+    if name in seen:
+        raise SystemExit(f"Duplicate distribution: {name}")
+    seen.add(name)
+print("unique_exact_pins:", len(seen))
+PY
+```
+
+Review any rejected entries manually rather than silently deleting them. Check the recorded PR head and checkout/event SHAs separately before using the snapshot. The archive hash is evidence of the ZIP you inspected, **not** a trusted published checksum.
+
 ## Candidate generation and clean validation
 
 1. Download the named artifact from the linked Actions run before expiration. Extract the freeze file and inspect every package/version, especially the Jupyter stack and build tools. Store a reviewed candidate as `constraints/python311-ubuntu2404.txt` on a separate PR branch. Do not edit the current default branch directly.
