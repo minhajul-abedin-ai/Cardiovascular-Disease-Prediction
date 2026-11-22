@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
+from packaging.version import InvalidVersion, Version
+
 PIN = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)")
 NAME = re.compile(r"[-_.]+")
 
@@ -31,6 +33,10 @@ def validate(archive: Path, expected_sha256: str, member: str) -> int:
         match = PIN.fullmatch(line)
         if not match:
             raise ValueError(f"Non-exact requirement at line {line_number}: {line!r}")
+        try:
+            Version(match.group(2))
+        except InvalidVersion as exc:
+            raise ValueError(f"Invalid PEP 440 version at line {line_number}: {match.group(2)!r}") from exc
         normalized = NAME.sub("-", match.group(1)).lower()
         if normalized in seen:
             raise ValueError(f"Duplicate normalized package: {normalized}")
