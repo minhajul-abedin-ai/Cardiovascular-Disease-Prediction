@@ -5,6 +5,7 @@ on:
       - 'constraints/python311-direct-candidate.txt'
       - '.github/workflows/validate-direct-constraints.yml'
       - 'requirements.txt'
+      - 'tests/test_direct_constraints.py'
   workflow_dispatch:
 
 permissions:
