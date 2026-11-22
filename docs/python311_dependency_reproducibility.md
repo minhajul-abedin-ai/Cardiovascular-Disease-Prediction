@@ -49,7 +49,7 @@ Passing the checks demonstrates dependency compatibility and the repository's of
 
 ## Direct requirement audit against the captured snapshot (2026-11-22)
 
-The SHA-256-verified artifact `14232033331` was downloaded and its freeze member compared with the nine direct entries in the **main-branch** `requirements.txt` (blob `9624a0ee4ae77cdcab6e4fe672f82cc11fb7e0b5`). Every direct distribution appears exactly once in the snapshot. These are observed versions, **not** proposed or tested constraints.
+The SHA-256-verified artifact `14232033331` was downloaded and its freeze member compared with the nine direct entries in the **historical main-branch** `requirements.txt` (blob `9624a0ee4ae77cdcab6e4fe672f82cc11fb7e0b5`). Every one of those nine distributions appeared exactly once in the snapshot. **The current PR branch has a tenth direct requirement, `packaging>=24.0` (requirements.txt blob `ad015a9f2101e118d40da47c798aa33874ad2a80`), introduced for the validator; its presence/version in the artifact was not checked in that nine-package audit.** Re-audit all current direct requirements before constructing constraints. These are observed versions, **not** proposed or tested constraints.
 
 | Direct requirement | Captured installed version |
 | --- | --- |
@@ -63,4 +63,4 @@ The SHA-256-verified artifact `14232033331` was downloaded and its freeze member
 | `jupyter>=1.0` | `1.1.1` |
 | `pytest>=7.4` | `9.2.0` |
 
-The artifact contains 120 exact package pins in total, including transitive and development dependencies. All nine observed versions meet their stated lower bounds when interpreted using standard Python packaging version ordering. The artifact's original workflow succeeded, but **this audit did not run a fresh resolver, install, `pip check`, or repository tests**. In particular, the presence of a distribution in `pip freeze` does not establish that a clean install using a constraints candidate will succeed. Next: review the full transitive set, produce a minimal constraints candidate, and validate in a clean Python 3.11/Ubuntu 24.04 environment before enforcing it in CI.
+The artifact contains 120 exact package pins in total, including transitive and development dependencies. All nine historically audited versions meet their stated lower bounds when interpreted using standard Python packaging version ordering. The artifact's original workflow succeeded, but **this audit did not run a fresh resolver, install, `pip check`, or repository tests**. In particular, the presence of a distribution in `pip freeze` does not establish that a clean install using a constraints candidate will succeed. Next: review the full transitive set, produce a minimal constraints candidate, and validate in a clean Python 3.11/Ubuntu 24.04 environment before enforcing it in CI.
