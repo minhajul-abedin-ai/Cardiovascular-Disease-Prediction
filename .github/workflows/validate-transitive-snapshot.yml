@@ -1,0 +1,33 @@
+name: Validate experimental Python 3.11 transitive snapshot
+on:
+  pull_request:
+    paths:
+      - 'constraints/python311-transitive-snapshot.txt'
+      - '.github/workflows/validate-transitive-snapshot.yml'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install against full experimental snapshot
+        run: python -m pip install -r requirements.txt -c constraints/python311-transitive-snapshot.txt
+      - name: Check dependencies
+        run: python -m pip check
+      - name: Run offline tests
+        run: python -m pytest -q
+      - name: Compile sources
+        run: python -m compileall -q src tests scripts
+      - name: Compare installed versions to snapshot
+        run: |
+          grep -v '^#' constraints/python311-transitive-snapshot.txt | grep -v '^$' | sort -f > /tmp/expected.txt
+          python -m pip freeze | sort -f > /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
