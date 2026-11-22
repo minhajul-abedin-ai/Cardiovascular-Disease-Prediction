@@ -73,3 +73,21 @@ python -m pip freeze > validated-freeze.txt
 ## Scope of the claim
 
 Passing the checks demonstrates dependency compatibility and the repository's offline tests for the tested environment. It **does not** reproduce the coursework's numerical metrics, guarantee cross-platform installs, prove clinical safety, or validate a dataset that was not used. Keep the educational/non-clinical disclaimer intact.
+
+## Direct requirement audit against the captured snapshot (2026-11-22)
+
+The SHA-256-verified artifact `14232033331` was downloaded and its freeze member compared with the nine direct entries in the **main-branch** `requirements.txt` (blob `9624a0ee4ae77cdcab6e4fe672f82cc11fb7e0b5`). Every direct distribution appears exactly once in the snapshot. These are observed versions, **not** proposed or tested constraints.
+
+| Direct requirement | Captured installed version |
+| --- | --- |
+| `pandas>=2.0` | `3.1.1` |
+| `numpy>=1.24` | `2.4.6` |
+| `matplotlib>=3.7` | `3.11.2` |
+| `seaborn>=0.12` | `0.13.2` |
+| `scikit-learn>=1.3` | `1.9.1` |
+| `imbalanced-learn>=0.11` | `0.14.2` |
+| `joblib>=1.3` | `1.6.0` |
+| `jupyter>=1.0` | `1.1.1` |
+| `pytest>=7.4` | `9.2.0` |
+
+The artifact contains 120 exact package pins in total, including transitive and development dependencies. All nine observed versions meet their stated lower bounds when interpreted using standard Python packaging version ordering. The artifact's original workflow succeeded, but **this audit did not run a fresh resolver, install, `pip check`, or repository tests**. In particular, the presence of a distribution in `pip freeze` does not establish that a clean install using a constraints candidate will succeed. Next: review the full transitive set, produce a minimal constraints candidate, and validate in a clean Python 3.11/Ubuntu 24.04 environment before enforcing it in CI.
