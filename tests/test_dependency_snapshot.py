@@ -73,3 +73,35 @@ def test_corrupt_zip_member_rejected(tmp_path):
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     with pytest.raises(ValueError, match="CRC"):
         validate(archive, digest, "python311-ubuntu2404-freeze.txt")
+
+
+def test_cli_valid_archive(tmp_path):
+    """The documented command must succeed and report the validated count."""
+    import subprocess
+    import sys
+
+    archive, digest = snapshot(tmp_path, "numpy==2.1.0\npandas==2.2.0\n")
+    script = Path(__file__).resolve().parents[1] / "scripts" / "validate_dependency_snapshot.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(archive), "--sha256", digest],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Validated 2 unique exact pins" in result.stdout
+    assert result.stderr == ""
+
+
+def test_cli_rejects_mismatched_digest(tmp_path):
+    """A corrupt/untrusted download must fail closed with an actionable error."""
+    import subprocess
+    import sys
+
+    archive, _ = snapshot(tmp_path, "numpy==2.1.0\n")
+    script = Path(__file__).resolve().parents[1] / "scripts" / "validate_dependency_snapshot.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(archive), "--sha256", "0" * 64],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "SHA-256 mismatch" in result.stderr
+    assert "Validated" not in result.stdout
