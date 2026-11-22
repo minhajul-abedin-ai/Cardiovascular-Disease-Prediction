@@ -9,7 +9,7 @@ from zipfile import BadZipFile, ZipFile
 
 from packaging.version import InvalidVersion, Version
 
-PIN = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)")
+PIN = re.compile(r"([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)==([^\s;]+)")
 NAME = re.compile(r"[-_.]+")
 
 
