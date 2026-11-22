@@ -10,43 +10,16 @@ Status: **proposed validation procedure, not a validated lockfile**. Tracking: [
 
 ## Snapshot preflight (before selecting constraints)
 
-From the repository root, download artifact `14232033331` from the linked run and save it as `dependency-snapshot.zip`. The following **offline, standard-library-only** check prints the archive members, verifies the expected freeze entry exists, and rejects duplicate or non-exact package specifications. It does not prove that the pinned environment installs successfully. The regular expression rejects whitespace within version tokens; review any rejected freeze lines rather than weakening validation.
+From the repository root, download artifact `14232033331` from the linked run and save it as `dependency-snapshot.zip`. Install the repository's declared `packaging` dependency first if needed. Run the **committed validator**, rather than copying an older inline regular expression that can accept malformed package names or invalid PEP 440 versions:
 
 ```bash
-python - <<'PY'
-from pathlib import Path
-from zipfile import ZipFile
-import hashlib
-import re
-
-archive = Path("dependency-snapshot.zip")
-expected_sha256 = "6b564ff2cea275c6f8c1a2c77268f936bee80cb0e8db30fd3b3c217e5f9a374e"  # GitHub Actions artifact metadata, checked 2026-11-21
-actual_sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
-print("archive_sha256:", actual_sha256)
-if actual_sha256 != expected_sha256:
-    raise SystemExit("Artifact ZIP SHA-256 differs from GitHub Actions metadata; stop and investigate")
-with ZipFile(archive) as z:
-    names = z.namelist()
-    print("members:", names)
-    target = "python311-ubuntu2404-freeze.txt"
-    if names.count(target) != 1:
-        raise SystemExit(f"Expected exactly one {target} entry")
-    lines = z.read(target).decode("utf-8").splitlines()
-seen = set()
-for line in lines:
-    line = line.strip()
-    if not line or line.startswith("#"):
-        continue
-    match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)", line)
-    if not match:
-        raise SystemExit(f"Review non-exact freeze entry: {line}")
-    name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
-    if name in seen:
-        raise SystemExit(f"Duplicate distribution: {name}")
-    seen.add(name)
-print("unique_exact_pins:", len(seen))
-PY
+python -m pip install 'packaging>=24.0'
+python scripts/validate_dependency_snapshot.py dependency-snapshot.zip \
+  --sha256 6b564ff2cea275c6f8c1a2c77268f936bee80cb0e8db30fd3b3c217e5f9a374e \
+  --member python311-ubuntu2404-freeze.txt
 ```
+
+This offline validation checks the ZIP SHA-256 against the recorded GitHub metadata, ZIP CRC, a single expected member, exact pins, normalized duplicate names, valid package-name boundaries and PEP 440 versions. It requires the `packaging` library but does **not** install or resolve the snapshot's dependencies, establish a lockfile, or prove a clean Python 3.11 installation.
 
 Review any rejected entries manually rather than silently deleting them. Check the recorded PR head and checkout/event SHAs separately before using the snapshot. The expected ZIP hash is from GitHub Actions artifact metadata, not an independently signed or immutable release. Recheck artifact ID and digest against GitHub before use; this comparison detects mismatched downloads but does not independently authenticate GitHub.
 
