@@ -26,6 +26,8 @@ def test_valid_exact_pins(tmp_path):
     "numpy==2.1 0",
     "numpy==2.1\t0",
     "numpy>=2.1",
+    "numpy==not-a-version",
+    "numpy==2.1#comment",
     "numpy==2.1\nnumpy==2.2",
     "numpy==2.1\nNum_py==2.2\nnum-py==2.3",
 ])
