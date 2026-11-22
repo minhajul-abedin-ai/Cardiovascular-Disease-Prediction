@@ -45,3 +45,31 @@ def test_missing_member(tmp_path):
     archive, digest = snapshot(tmp_path, "numpy==2.1.0")
     with pytest.raises(ValueError, match="exactly one"):
         validate(archive, digest, "missing.txt")
+
+
+def test_empty_freeze_rejected(tmp_path):
+    archive, digest = snapshot(tmp_path, "# no packages\n\n")
+    with pytest.raises(ValueError, match="no package pins"):
+        validate(archive, digest, "python311-ubuntu2404-freeze.txt")
+
+
+def test_normalized_duplicate_rejected(tmp_path):
+    archive, digest = snapshot(tmp_path, "my_pkg==1.0\nMY.PKG==1.1\n")
+    with pytest.raises(ValueError, match="Duplicate normalized package"):
+        validate(archive, digest, "python311-ubuntu2404-freeze.txt")
+
+
+def test_invalid_digest_format_rejected(tmp_path):
+    archive, _ = snapshot(tmp_path, "numpy==2.1.0\n")
+    with pytest.raises(ValueError, match="64 hexadecimal"):
+        validate(archive, "not-a-sha256", "python311-ubuntu2404-freeze.txt")
+
+
+def test_corrupt_zip_member_rejected(tmp_path):
+    archive, _ = snapshot(tmp_path, "numpy==2.1.0\n")
+    raw = archive.read_bytes()
+    assert raw.count(b"numpy==2.1.0") == 1
+    archive.write_bytes(raw.replace(b"numpy==2.1.0", b"numpx==2.1.0"))
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    with pytest.raises(ValueError, match="CRC"):
+        validate(archive, digest, "python311-ubuntu2404-freeze.txt")
