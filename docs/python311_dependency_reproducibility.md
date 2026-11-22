@@ -49,18 +49,21 @@ Passing the checks demonstrates dependency compatibility and the repository's of
 
 ## Direct requirement audit against the captured snapshot (2026-11-22)
 
-The SHA-256-verified artifact `14232033331` was downloaded and its freeze member compared with the nine direct entries in the **historical main-branch** `requirements.txt` (blob `9624a0ee4ae77cdcab6e4fe672f82cc11fb7e0b5`). Every one of those nine distributions appeared exactly once in the snapshot. **The current PR branch has a tenth direct requirement, `packaging>=24.0` (requirements.txt blob `ad015a9f2101e118d40da47c798aa33874ad2a80`), introduced for the validator; its presence/version in the artifact was not checked in that nine-package audit.** Re-audit all current direct requirements before constructing constraints. These are observed versions, **not** proposed or tested constraints.
+GitHub Actions artifact `14232033331` was downloaded again on 2026-11-22. Its computed ZIP SHA-256 was `6b564ff2cea275c6f8c1a2c77268f936bee80cb0e8db30fd3b3c217e5f9a374e`, matching the recorded artifact digest. The `python311-ubuntu2404-freeze.txt` member contains 120 exact distribution pins.
 
-| Direct requirement | Captured installed version |
-| --- | --- |
-| `pandas>=2.0` | `3.1.1` |
-| `numpy>=1.24` | `2.4.6` |
-| `matplotlib>=3.7` | `3.11.2` |
-| `seaborn>=0.12` | `0.13.2` |
-| `scikit-learn>=1.3` | `1.9.1` |
-| `imbalanced-learn>=0.11` | `0.14.2` |
-| `joblib>=1.3` | `1.6.0` |
-| `jupyter>=1.0` | `1.1.1` |
-| `pytest>=7.4` | `9.2.0` |
+All **ten current PR-branch** direct requirements (requirements.txt blob `ad015a9f2101e118d40da47c798aa33874ad2a80`) were compared against the freeze member using canonicalized package names and `packaging.requirements.Requirement` / `packaging.version.Version`. Each distribution was present, and each captured version satisfies its declared lower bound. This extends the earlier nine-package audit to include `packaging>=24.0`.
 
-The artifact contains 120 exact package pins in total, including transitive and development dependencies. All nine historically audited versions meet their stated lower bounds when interpreted using standard Python packaging version ordering. The artifact's original workflow succeeded, but **this audit did not run a fresh resolver, install, `pip check`, or repository tests**. In particular, the presence of a distribution in `pip freeze` does not establish that a clean install using a constraints candidate will succeed. Next: review the full transitive set, produce a minimal constraints candidate, and validate in a clean Python 3.11/Ubuntu 24.04 environment before enforcing it in CI.
+| Direct requirement | Captured version | Minimum satisfied? |
+| --- | --- | --- |
+| `pandas>=2.0` | `3.1.1` | Yes |
+| `numpy>=1.24` | `2.4.6` | Yes |
+| `matplotlib>=3.7` | `3.11.2` | Yes |
+| `seaborn>=0.12` | `0.13.2` | Yes |
+| `scikit-learn>=1.3` | `1.9.1` | Yes |
+| `imbalanced-learn>=0.11` | `0.14.2` | Yes |
+| `joblib>=1.3` | `1.6.0` | Yes |
+| `jupyter>=1.0` | `1.1.1` | Yes |
+| `pytest>=7.4` | `9.2.0` | Yes |
+| `packaging>=24.0` | `26.3` | Yes |
+
+**Limitations:** This is an offline audit of a previously installed environment, **not** a fresh resolver run, clean Python 3.11 installation, `pip check`, or repository test execution. The captured versions are observations, not tested constraints. Next: review transitive pins and build a minimal constraints candidate, then validate in a clean Python 3.11/Ubuntu 24.04 environment before CI enforcement.
