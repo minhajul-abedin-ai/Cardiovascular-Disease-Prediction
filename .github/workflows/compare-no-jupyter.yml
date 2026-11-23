@@ -1,0 +1,49 @@
+name: Compare Jupyter-free requirements experiment
+on:
+  pull_request:
+    paths:
+      - 'requirements.txt'
+      - 'requirements-no-jupyter-experiment.txt'
+      - '.github/workflows/compare-no-jupyter.yml'
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        requirements: [requirements.txt, requirements-no-jupyter-experiment.txt]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install clean environment
+        run: python -m pip install -r "${{ matrix.requirements }}"
+      - name: Check dependency compatibility
+        run: python -m pip check
+      - name: Run offline tests
+        run: python -m pytest -q
+      - name: Compile sources
+        run: python -m compileall -q src tests scripts
+      - name: Record resolved environment
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib.metadata import distributions
+          from pathlib import Path
+          names = sorted({d.metadata["Name"].lower() for d in distributions() if d.metadata["Name"]})
+          print("Installed distributions:", len(names))
+          print("Jupyter metapackage installed:", "jupyter" in names)
+          summary = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a") as out:
+              out.write(f"### ${{ matrix.requirements }}\n\n")
+              out.write(f"Installed distributions: {len(names)}\n\n")
+              out.write(f"Jupyter metapackage installed: {'jupyter' in names}\n")
+          PY
