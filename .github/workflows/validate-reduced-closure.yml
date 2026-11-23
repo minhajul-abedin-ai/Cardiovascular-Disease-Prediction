@@ -1,0 +1,64 @@
+name: Validate reduced Python 3.11 dependency candidate
+on:
+  pull_request:
+    paths:
+      - 'constraints/python311-reduced-candidate.txt'
+      - '.github/workflows/validate-reduced-closure.yml'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reduced-closure:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install reduced candidate in clean runner
+        run: python -m pip install -r requirements.txt -c constraints/python311-reduced-candidate.txt
+      - name: Check dependency compatibility
+        run: python -m pip check
+      - name: Run offline tests
+        run: python -m pytest -q
+      - name: Compile sources
+        run: python -m compileall -q src tests scripts
+      - name: Compare resolved packages with candidate
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from importlib.metadata import distributions
+          from packaging.requirements import Requirement
+          from packaging.utils import canonicalize_name
+
+          expected = {}
+          for line in Path("constraints/python311-reduced-candidate.txt").read_text().splitlines():
+              line = line.strip()
+              if not line or line.startswith("#"):
+                  continue
+              req = Requirement(line)
+              assert len(req.specifier) == 1 and str(req.specifier).startswith("=="), line
+              name = canonicalize_name(req.name)
+              assert name not in expected, name
+              expected[name] = str(req.specifier)[2:]
+          actual = {canonicalize_name(d.metadata["Name"]): d.version for d in distributions()}
+          # pip and setuptools are bootstrap tooling, not application requirements.
+          bootstrap = {"pip", "setuptools"}
+          missing = sorted(set(expected) - set(actual))
+          mismatched = sorted(
+              f"{name}: expected {version}, installed {actual[name]}"
+              for name, version in expected.items()
+              if name in actual and actual[name] != version
+          )
+          unexpected = sorted(set(actual) - set(expected) - bootstrap)
+          print(f"Expected pinned packages: {len(expected)}")
+          print(f"Installed packages: {len(actual)}")
+          print(f"Missing: {missing}")
+          print(f"Mismatched: {mismatched}")
+          print(f"Unexpected non-bootstrap packages: {unexpected}")
+          assert not (missing or mismatched or unexpected), "Reduced snapshot does not reproduce exactly"
+          PY
