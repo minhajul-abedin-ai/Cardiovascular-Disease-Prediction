@@ -75,6 +75,44 @@ jobs:
           assert callable(namespace.get("run")), "Training entry point unavailable"
           print("Notebook setup executed and both entry points imported; no dataset download or training")
           PY
+      - name: Smoke-test notebook model computation with synthetic data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+
+          path = Path("notebooks/cardiovascular_disease_prediction.ipynb")
+          notebook = json.loads(path.read_text(encoding="utf-8"))
+          setup = next(cell for cell in notebook["cells"] if cell["cell_type"] == "code")
+          source = setup["source"]
+          namespace = {"__name__": "__main__"}
+          exec(compile("".join(source) if isinstance(source, list) else source,
+                       str(path) + ":setup", "exec"), namespace)
+
+          # Exercise actual model computation without invoking the dataset downloader
+          # or the expensive full GridSearchCV training entry point.
+          from train import build_logistic_pipeline
+          from data import EXPECTED_COLUMNS
+          rows = []
+          for i in range(80):
+              rows.append({
+                  "age": 35 + i % 40, "sex": i % 2, "cp": i % 4,
+                  "trestbps": 105 + i % 50, "chol": 170 + i % 100,
+                  "fbs": (i // 3) % 2, "restecg": i % 3,
+                  "thalach": 100 + i % 90, "exang": (i // 2) % 2,
+                  "oldpeak": float(i % 20) / 10, "slope": i % 3,
+                  "ca": i % 4, "thal": 2 + i % 2,
+                  "target": int(i % 5 in (0, 1)),
+              })
+          frame = pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+          model = build_logistic_pipeline()
+          model.fit(frame.drop(columns="target"), frame["target"])
+          predictions = model.predict(frame.drop(columns="target").iloc[:5])
+          assert len(predictions) == 5
+          assert set(predictions).issubset({0, 1})
+          print("Notebook setup and synthetic logistic fit/predict passed (80 rows; no download)")
+          PY
       - name: Record resolved environment
         shell: bash
         run: |
