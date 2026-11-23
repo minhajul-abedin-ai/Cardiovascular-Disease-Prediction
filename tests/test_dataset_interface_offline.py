@@ -2,7 +2,6 @@
 
 All rows are synthetic. No network requests or clinical claims are involved.
 """
-import io
 import sys
 from pathlib import Path
 from unittest.mock import patch
