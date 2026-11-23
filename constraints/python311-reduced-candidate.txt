@@ -1,12 +1,14 @@
-# Experimental reduced dependency candidate (Python 3.11, Ubuntu 24.04)
-# Derived from constraints/python311-transitive-snapshot.txt, excluding nine
-# packages not reachable in the static pip-inspect dependency graph of run 45103028217.
-# This is NOT validated until clean-install CI passes; not hash-locked.
-# Do not replace the existing snapshot or production requirements.
+# Experimental dependency-closure candidate (Python 3.11, Ubuntu 24.04)
+# All 118 pins are retained after CI identified nine optional-extra dependencies
+# omitted by static Requires-Dist traversal (run 45127464259).
+# This candidate is NOT a reduced lockfile: a smaller exact snapshot was not
+# supported by the clean-install evidence. Not hash-locked or cross-platform.
+# Do not replace production requirements or the existing full snapshot.
 
 anyio==4.16.0
 argon2-cffi==25.1.0
 argon2-cffi-bindings==26.2.0
+arrow==1.4.0
 asttokens==3.0.2
 async-lru==2.4.0
 attrs==26.1.0
@@ -25,6 +27,7 @@ defusedxml==0.7.1
 executing==2.3.0
 fastjsonschema==2.22.3
 fonttools==4.68.0
+fqdn==1.6.0
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
@@ -35,10 +38,12 @@ ipykernel==7.4.0
 ipython==9.18.1
 ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.9
+isoduration==20.11.0
 jedi==0.20.1
 Jinja2==3.1.6
 joblib==1.6.0
 json5==0.17.3
+jsonpointer==3.12
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 jupyter==1.1.1
@@ -55,6 +60,7 @@ jupyterlab_pygments==0.3.0
 jupyterlab_server==2.28.1
 jupyterlab_widgets==3.0.17
 kiwisolver==1.5.1
+lark==1.3.1
 MarkupSafe==3.0.4
 matplotlib==3.11.2
 matplotlib-inline==0.2.2
@@ -93,6 +99,7 @@ referencing==0.37.0
 requests==2.34.2
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
+rfc3987-syntax==1.1.0
 rpds-py==2026.9.1
 scikit-learn==1.9.1
 scipy==1.17.1
@@ -104,12 +111,15 @@ soupsieve==4.1.3
 stack-data==0.6.3
 terminado==0.18.1
 threadpoolctl==3.8.0
+tinycss2==1.5.1
 tornado==6.6.1
 traitlets==5.16.1
 typing_extensions==4.16.0
 tzdata==2026.6
+uri-template==1.3.0
 urllib3==2.8.0
 wcwidth==0.9.5
+webcolors==25.10.0
 webencodings==0.6.1
 websocket-client==1.9.2
 widgetsnbextension==4.0.16
