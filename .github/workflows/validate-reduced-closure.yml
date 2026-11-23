@@ -5,6 +5,7 @@ on:
       - 'constraints/python311-reduced-candidate.txt'
       - '.github/workflows/validate-reduced-closure.yml'
       - 'requirements.txt'
+      - 'scripts/diagnose_snapshot_parents.py'
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,8 @@ jobs:
         run: python -m pytest -q
       - name: Compile sources
         run: python -m compileall -q src tests scripts
+      - name: Diagnose unpinned dependency parents
+        run: python scripts/diagnose_snapshot_parents.py
       - name: Compare resolved packages with candidate
         shell: bash
         run: |
