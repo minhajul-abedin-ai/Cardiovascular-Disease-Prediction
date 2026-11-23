@@ -56,6 +56,25 @@ jobs:
                               f"{path}:cell-{index}", "exec")
           print(f"Validated {len(notebooks)} notebook(s), {code_cells} code cell(s) (no execution)")
           PY
+      - name: Execute notebook setup cell without downloading data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("notebooks/cardiovascular_disease_prediction.ipynb")
+          notebook = json.loads(path.read_text(encoding="utf-8"))
+          cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
+          if not cells:
+              raise SystemExit("Notebook has no executable setup cell")
+          source = cells[0]["source"]
+          namespace = {"__name__": "__main__"}
+          exec(compile("".join(source) if isinstance(source, list) else source,
+                       str(path) + ":setup", "exec"), namespace)
+          assert callable(namespace.get("download_dataset")), "Dataset loader unavailable"
+          assert callable(namespace.get("run")), "Training entry point unavailable"
+          print("Notebook setup executed and both entry points imported; no dataset download or training")
+          PY
       - name: Record resolved environment
         shell: bash
         run: |
