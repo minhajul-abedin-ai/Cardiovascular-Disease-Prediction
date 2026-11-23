@@ -32,6 +32,30 @@ jobs:
         run: python -m pytest -q
       - name: Compile sources
         run: python -m compileall -q src tests scripts
+      - name: Validate notebook JSON and code syntax without execution
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          notebooks = sorted(Path("notebooks").rglob("*.ipynb"))
+          if not notebooks:
+              raise SystemExit("No notebooks found to validate")
+          code_cells = 0
+          for path in notebooks:
+              notebook = json.loads(path.read_text(encoding="utf-8"))
+              assert notebook.get("nbformat") == 4, f"{path}: unexpected notebook format"
+              assert isinstance(notebook.get("cells"), list), f"{path}: missing cells"
+              for index, cell in enumerate(notebook["cells"], start=1):
+                  assert cell.get("cell_type") in {"code", "markdown", "raw"}, f"{path}: invalid cell type"
+                  source = cell.get("source", [])
+                  assert isinstance(source, (list, str)), f"{path}: invalid cell source"
+                  if cell["cell_type"] == "code":
+                      code_cells += 1
+                      compile("".join(source) if isinstance(source, list) else source,
+                              f"{path}:cell-{index}", "exec")
+          print(f"Validated {len(notebooks)} notebook(s), {code_cells} code cell(s) (no execution)")
+          PY
       - name: Record resolved environment
         shell: bash
         run: |
