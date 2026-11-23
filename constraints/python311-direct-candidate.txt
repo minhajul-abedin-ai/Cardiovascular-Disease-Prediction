@@ -1,0 +1,14 @@
+# Experimental direct-dependency constraints from the 2026-11-22 snapshot audit.
+# NOT a lockfile: transitive packages are intentionally not pinned.
+# Do not enforce in the primary CI workflow until the candidate job passes.
+# Source: docs/python311_dependency_reproducibility.md
+pandas==3.1.1
+numpy==2.4.6
+matplotlib==3.11.2
+seaborn==0.13.2
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+joblib==1.6.0
+jupyter==1.1.1
+pytest==9.2.0
+packaging==26.3
