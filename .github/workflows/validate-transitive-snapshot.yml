@@ -5,6 +5,7 @@ on:
       - 'constraints/python311-transitive-snapshot.txt'
       - '.github/workflows/validate-transitive-snapshot.yml'
       - 'requirements.txt'
+      - 'tests/test_transitive_snapshot.py'
   workflow_dispatch:
 
 permissions:
