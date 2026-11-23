@@ -32,3 +32,60 @@ jobs:
           grep -v '^#' constraints/python311-transitive-snapshot.txt | grep -v '^$' | sort -f > /tmp/expected.txt
           python -m pip freeze | sort -f > /tmp/actual.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
+      - name: Inspect installed dependency closure (report only)
+        shell: bash
+        run: |
+          python -m pip inspect --local > /tmp/python311-pip-inspect.json
+          python - <<'PY'
+          import json
+          import os
+          from collections import deque
+          from pathlib import Path
+          from packaging.requirements import Requirement
+          from packaging.utils import canonicalize_name
+          from packaging.markers import default_environment
+
+          report = json.loads(Path("/tmp/python311-pip-inspect.json").read_text())
+          installed = {
+              canonicalize_name(item["metadata"]["name"]): item
+              for item in report["installed"]
+          }
+          roots = set()
+          for line in Path("requirements.txt").read_text().splitlines():
+              line = line.strip()
+              if line and not line.startswith("#"):
+                  roots.add(canonicalize_name(Requirement(line).name))
+          environment = default_environment()
+          reached = set()
+          pending = deque(sorted(roots))
+          missing = set()
+          while pending:
+              name = pending.popleft()
+              if name in reached:
+                  continue
+              if name not in installed:
+                  missing.add(name)
+                  continue
+              reached.add(name)
+              for spec in installed[name]["metadata"].get("requires_dist") or []:
+                  requirement = Requirement(spec)
+                  # Extras are not requested by the project's direct requirements.
+                  if requirement.marker and not requirement.marker.evaluate(
+                      environment={**environment, "extra": ""}
+                  ):
+                      continue
+                  pending.append(canonicalize_name(requirement.name))
+          excess = sorted(set(installed) - reached)
+          lines = [
+              "### Python 3.11 dependency-closure inventory (informational)",
+              f"- Direct roots: {len(roots)}",
+              f"- Reachable installed packages: {len(reached)}",
+              f"- Other installed packages: {len(excess)}",
+              f"- Missing required package metadata: {', '.join(sorted(missing)) or 'none'}",
+              "- Other installed packages (not proven unnecessary): " + (", ".join(excess) or "none"),
+              "- Caveat: static Requires-Dist traversal does not detect dynamic imports, optional extras or test-only imports.",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
+              output.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY
