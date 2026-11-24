@@ -25,6 +25,12 @@ At commit `b0a19c8`, [comparison run 45315556158](https://github.com/minhajul-ab
 
 Static import inspection of `src/train.py` and `src/data.py` confirms that the command-line training path uses pandas, NumPy, scikit-learn, imbalanced-learn, joblib, and plotting utilities, without importing the `jupyter` metapackage. The experimental requirements retain the baseline package declarations other than `jupyter>=1.0`. The successful synthetic fit/predict smoke test is consistent with this dependency boundary; it does **not** prove that the complete `GridSearchCV` training and artifact-writing path works on the real dataset. The repository's default README quick start still installs `requirements.txt`, so interactive notebook users retain the baseline environment. No default requirements or lock snapshots were changed.
 
+## Latest verified offline integration evidence (commit `e6b9b20`)
+
+At commit `e6b9b20`, [dependency comparison run 45388230679](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45388230679) reported **13 pytest tests passed** in the standard environment and **13 passed** in the Jupyter-free environment. The separate [ML pipeline run 45388230689](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45388230689) reported **13 passed**. These are **39 executions of 13 tests across three jobs**, not 39 unique tests. The successful subprocess CLI smoke test (`test_cli_trains_and_writes_reloadable_models`) uses synthetic fixtures and a reduced search to check command-line training and reloadable model artifacts. Earlier offline tests cover training artifacts through the Python entry point, CLI help, unknown arguments, and missing-dataset failures.
+
+This evidence supersedes the older 8-test status above. It does **not** establish real-dataset model performance, a complete production-scale hyperparameter search, end-to-end interactive notebook execution, or clinical suitability. Keep the Jupyter-free requirements experimental and the PR in draft until separately reviewed.
+
 ## Reproduce the checks
 
 From a fresh Python 3.11 environment, choose one requirements file and run:
