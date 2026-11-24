@@ -1,0 +1,131 @@
+name: Compare Jupyter-free requirements experiment
+on:
+  pull_request:
+    paths:
+      - 'requirements.txt'
+      - 'requirements-no-jupyter-experiment.txt'
+      - '.github/workflows/compare-no-jupyter.yml'
+      - 'src/**'
+      - 'tests/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        requirements: [requirements.txt, requirements-no-jupyter-experiment.txt]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install clean environment
+        run: python -m pip install -r "${{ matrix.requirements }}"
+      - name: Check dependency compatibility
+        run: python -m pip check
+      - name: Run offline tests
+        run: python -m pytest -vv
+      - name: Compile sources
+        run: python -m compileall -q src tests scripts
+      - name: Validate notebook JSON and code syntax without execution
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          notebooks = sorted(Path("notebooks").rglob("*.ipynb"))
+          if not notebooks:
+              raise SystemExit("No notebooks found to validate")
+          code_cells = 0
+          for path in notebooks:
+              notebook = json.loads(path.read_text(encoding="utf-8"))
+              assert notebook.get("nbformat") == 4, f"{path}: unexpected notebook format"
+              assert isinstance(notebook.get("cells"), list), f"{path}: missing cells"
+              for index, cell in enumerate(notebook["cells"], start=1):
+                  assert cell.get("cell_type") in {"code", "markdown", "raw"}, f"{path}: invalid cell type"
+                  source = cell.get("source", [])
+                  assert isinstance(source, (list, str)), f"{path}: invalid cell source"
+                  if cell["cell_type"] == "code":
+                      code_cells += 1
+                      compile("".join(source) if isinstance(source, list) else source,
+                              f"{path}:cell-{index}", "exec")
+          print(f"Validated {len(notebooks)} notebook(s), {code_cells} code cell(s) (no execution)")
+          PY
+      - name: Execute notebook setup cell without downloading data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("notebooks/cardiovascular_disease_prediction.ipynb")
+          notebook = json.loads(path.read_text(encoding="utf-8"))
+          cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
+          if not cells:
+              raise SystemExit("Notebook has no executable setup cell")
+          source = cells[0]["source"]
+          namespace = {"__name__": "__main__"}
+          exec(compile("".join(source) if isinstance(source, list) else source,
+                       str(path) + ":setup", "exec"), namespace)
+          assert callable(namespace.get("download_dataset")), "Dataset loader unavailable"
+          assert callable(namespace.get("run")), "Training entry point unavailable"
+          print("Notebook setup executed and both entry points imported; no dataset download or training")
+          PY
+      - name: Smoke-test notebook model computation with synthetic data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+
+          path = Path("notebooks/cardiovascular_disease_prediction.ipynb")
+          notebook = json.loads(path.read_text(encoding="utf-8"))
+          setup = next(cell for cell in notebook["cells"] if cell["cell_type"] == "code")
+          source = setup["source"]
+          namespace = {"__name__": "__main__"}
+          exec(compile("".join(source) if isinstance(source, list) else source,
+                       str(path) + ":setup", "exec"), namespace)
+
+          # Exercise actual model computation without invoking the dataset downloader
+          # or the expensive full GridSearchCV training entry point.
+          from train import build_logistic_pipeline
+          from data import EXPECTED_COLUMNS
+          rows = []
+          for i in range(80):
+              rows.append({
+                  "age": 35 + i % 40, "sex": i % 2, "cp": i % 4,
+                  "trestbps": 105 + i % 50, "chol": 170 + i % 100,
+                  "fbs": (i // 3) % 2, "restecg": i % 3,
+                  "thalach": 100 + i % 90, "exang": (i // 2) % 2,
+                  "oldpeak": float(i % 20) / 10, "slope": i % 3,
+                  "ca": i % 4, "thal": 2 + i % 2,
+                  "target": int(i % 5 in (0, 1)),
+              })
+          frame = pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+          model = build_logistic_pipeline()
+          model.fit(frame.drop(columns="target"), frame["target"])
+          predictions = model.predict(frame.drop(columns="target").iloc[:5])
+          assert len(predictions) == 5
+          assert set(predictions).issubset({0, 1})
+          print("Notebook setup and synthetic logistic fit/predict passed (80 rows; no download)")
+          PY
+      - name: Record resolved environment
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib.metadata import distributions
+          from pathlib import Path
+          names = sorted({d.metadata["Name"].lower() for d in distributions() if d.metadata["Name"]})
+          print("Installed distributions:", len(names))
+          print("Jupyter metapackage installed:", "jupyter" in names)
+          summary = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a") as out:
+              out.write(f"### ${{ matrix.requirements }}\n\n")
+              out.write(f"Installed distributions: {len(names)}\n\n")
+              out.write(f"Jupyter metapackage installed: {'jupyter' in names}\n")
+          PY
