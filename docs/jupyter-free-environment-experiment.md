@@ -46,7 +46,7 @@ For the baseline, replace the requirements filename with `requirements.txt`. The
 
 ## Documentation-only CI trigger check
 
-The experimental comparison workflow includes `docs/**` in its pull-request path filter as of commit `3c36e14`. This documentation-only update is intended to exercise that filter. A successful run associated with this commit would demonstrate that the workflow can start for a documentation-only change on this PR; it would **not** establish that every possible documentation change triggers every repository workflow. Inspect the commit-associated workflow run and job conclusions before recording the trigger as verified.
+The experimental comparison workflow includes `docs/**` in its pull-request path filter as of commit `3c36e14`. The documentation-only commit [`dd9abdd`](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/commit/dd9abdd498c4549ddffb7f7520e4a5962e5e5563) **did trigger** the [dependency-comparison workflow run #45485370769](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45485370769), which completed successfully. The separate [ML pipeline run #45485370828](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45485370828) also succeeded. This verifies the trigger for that documentation-only PR commit, not every possible documentation change or every repository workflow. The CI uses synthetic/offline fixtures; it does not establish real-data performance or full interactive notebook execution.
 
 ## Before proposing a default change
 
