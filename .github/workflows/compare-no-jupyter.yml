@@ -29,7 +29,7 @@ jobs:
       - name: Check dependency compatibility
         run: python -m pip check
       - name: Run offline tests
-        run: python -m pytest -q
+        run: python -m pytest -vv
       - name: Compile sources
         run: python -m compileall -q src tests scripts
       - name: Validate notebook JSON and code syntax without execution
