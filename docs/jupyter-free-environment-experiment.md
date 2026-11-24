@@ -44,6 +44,10 @@ python -m compileall -q src tests scripts
 
 For the baseline, replace the requirements filename with `requirements.txt`. The notebook-specific checks live in `.github/workflows/compare-no-jupyter.yml` and run on GitHub Actions. The commands above do not execute the notebook or download the dataset.
 
+## Documentation-only CI trigger check
+
+The experimental comparison workflow includes `docs/**` in its pull-request path filter as of commit `3c36e14`. This documentation-only update is intended to exercise that filter. A successful run associated with this commit would demonstrate that the workflow can start for a documentation-only change on this PR; it would **not** establish that every possible documentation change triggers every repository workflow. Inspect the commit-associated workflow run and job conclusions before recording the trigger as verified.
+
 ## Before proposing a default change
 
 Validate the real-data loading interface with controlled fixtures, document any separate interactive-notebook dependencies, and review the complete CI results. Keep PR #20 draft and do not change `requirements.txt` or the pinned snapshots solely on the strength of the smoke tests.
