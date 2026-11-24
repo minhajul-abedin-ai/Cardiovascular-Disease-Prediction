@@ -43,4 +43,4 @@ def test_cli_missing_dataset_fails_without_training_artifacts(tmp_path):
     result = invoke("--data", missing, "--output", output)
     assert result.returncode != 0
     assert "Dataset not found" in result.stderr
-    assert not list(output.glob("*.joblib")) if output.exists() else True
+    assert not output.exists() or not list(output.glob("*.joblib"))
