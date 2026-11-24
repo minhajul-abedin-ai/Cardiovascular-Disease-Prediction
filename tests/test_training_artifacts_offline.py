@@ -1,11 +1,10 @@
 """Offline end-to-end training contract using synthetic, nonclinical records.
 
-The production CLI's expensive Random Forest search is reduced to one candidate
+The training entry point's expensive Random Forest search is reduced to one candidate
 for this integration test; the training, evaluation, and serialization paths
 remain real. No dataset download is performed.
 """
 import json
-import subprocess
 import sys
 from pathlib import Path
 
