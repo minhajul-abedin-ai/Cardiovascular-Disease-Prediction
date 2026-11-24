@@ -19,6 +19,12 @@ At commit `2e17bf1`, [comparison run 45283679861](https://github.com/minhajul-ab
 
 **Not verified:** launching an interactive Jupyter server/kernel; executing every notebook cell in order; downloading and validating the real dataset; full training/tuning on the real dataset; reproducibility of the original coursework metrics; or clinical suitability. The notebook setup and synthetic computation smoke tests must not be described as full notebook execution.
 
+## Current test evidence and CLI dependency boundary
+
+At commit `b0a19c8`, [comparison run 45315556158](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45315556158) passed **8 pytest tests in each of the two matrix environments**, with individual test names visible via `pytest -vv`. The separate [ML pipeline run 45315556176](https://github.com/minhajul-abedin-ai/Cardiovascular-Disease-Prediction/actions/runs/45315556176) passed 8 tests. These are **24 test executions across three jobs**, not 24 distinct tests. This supersedes the earlier uncertainty about test counts, but does not validate live data downloads or full model training.
+
+Static import inspection of `src/train.py` and `src/data.py` confirms that the command-line training path uses pandas, NumPy, scikit-learn, imbalanced-learn, joblib, and plotting utilities, without importing the `jupyter` metapackage. The experimental requirements retain the baseline package declarations other than `jupyter>=1.0`. The successful synthetic fit/predict smoke test is consistent with this dependency boundary; it does **not** prove that the complete `GridSearchCV` training and artifact-writing path works on the real dataset. The repository's default README quick start still installs `requirements.txt`, so interactive notebook users retain the baseline environment. No default requirements or lock snapshots were changed.
+
 ## Reproduce the checks
 
 From a fresh Python 3.11 environment, choose one requirements file and run:
@@ -26,7 +32,7 @@ From a fresh Python 3.11 environment, choose one requirements file and run:
 ```bash
 python -m pip install -r requirements-no-jupyter-experiment.txt
 python -m pip check
-python -m pytest -q
+python -m pytest -vv
 python -m compileall -q src tests scripts
 ```
 
