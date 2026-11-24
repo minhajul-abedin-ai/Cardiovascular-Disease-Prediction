@@ -7,6 +7,7 @@ on:
       - '.github/workflows/compare-no-jupyter.yml'
       - 'src/**'
       - 'tests/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
