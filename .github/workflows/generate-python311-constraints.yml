@@ -1,0 +1,50 @@
+name: Generate Python 3.11 dependency constraints (review only)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/generate-python311-constraints.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Record resolver version
+        run: python -m pip --version
+      - name: Resolve and install baseline requirements
+        run: python -m pip install -r requirements.txt
+      - name: Check installed dependency compatibility
+        run: python -m pip check
+      - name: Write candidate constraints and environment metadata
+        shell: bash
+        run: |
+          mkdir -p dependency-resolution
+          python -m pip freeze --all > dependency-resolution/constraints-py311-ubuntu2404-candidate.txt
+          python -m pip --version > dependency-resolution/pip-version.txt
+          python --version > dependency-resolution/python-version.txt 2>&1
+          cat /etc/os-release > dependency-resolution/os-release.txt
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("dependency-resolution/constraints-py311-ubuntu2404-candidate.txt")
+          lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
+          assert lines, "No installed distributions recorded"
+          assert all("==" in line or " @ " in line for line in lines), "Unexpected unpinned requirement"
+          print(f"Recorded {len(lines)} installed distributions as a review candidate")
+          PY
+      - name: Run offline tests under resolved dependencies
+        run: python -m pytest -q
+      - name: Upload candidate for human review (no commit or release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: python311-ubuntu2404-constraints-candidate
+          path: dependency-resolution/
+          if-no-files-found: error
+          retention-days: 14
