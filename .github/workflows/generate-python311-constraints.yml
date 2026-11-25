@@ -1,6 +1,9 @@
 name: Generate Python 3.11 dependency constraints (review only)
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/generate-python311-constraints.yml'
   workflow_dispatch:
 
 permissions:
